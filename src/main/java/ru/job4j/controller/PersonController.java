@@ -10,6 +10,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.domain.Person;
+import ru.job4j.dto.PersonDTO;
 import ru.job4j.service.PersonService;
 
 import javax.servlet.http.HttpServletRequest;
@@ -56,6 +57,17 @@ public class PersonController {
             return ResponseEntity.badRequest().body("Not managed to update the person");
         }
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/patchDTO/{id}")
+    public ResponseEntity<Person> patchDTO(@RequestBody PersonDTO personDTO, @PathVariable int id) {
+        var person = personService.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Account is not found. Please, check requisites."
+                ));
+        person.setPassword(personDTO.getPassword());
+        var result = personService.update(person);
+        return new ResponseEntity<>(person, result ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
     }
 
     @DeleteMapping("/{id}")
