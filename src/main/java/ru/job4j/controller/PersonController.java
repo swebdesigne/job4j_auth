@@ -15,6 +15,7 @@ import ru.job4j.service.PersonService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -60,11 +61,14 @@ public class PersonController {
     }
 
     @PatchMapping("/patchDTO/{id}")
-    public ResponseEntity<Person> patchDTO(@RequestBody PersonDTO personDTO, @PathVariable int id) {
+    public ResponseEntity<Person> patchDTO(@Valid @RequestBody PersonDTO personDTO, @PathVariable int id) {
         var person = personService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Account is not found. Please, check requisites."
                 ));
+        if (personDTO.getPassword().length() < 5) {
+            throw new IllegalArgumentException("Invalid password. Password length must be more than 5 characters.");
+        }
         person.setPassword(personDTO.getPassword());
         var result = personService.update(person);
         return new ResponseEntity<>(person, result ? HttpStatus.OK : HttpStatus.BAD_REQUEST);
@@ -81,12 +85,9 @@ public class PersonController {
     }
 
     @PostMapping("/sign-up")
-    public ResponseEntity<Person> signUp(@RequestBody Person person) {
+    public ResponseEntity<Person> signUp(@Valid @RequestBody Person person) {
         if (Objects.isNull(person.getLogin()) || Objects.isNull(person.getPassword())) {
             throw new NullPointerException("Username and password have not empty!!!");
-        }
-        if (person.getPassword().length() < 5) {
-            throw new IllegalArgumentException("Invalid password. Password length must be more than 5 characters.");
         }
         person.setPassword(encoder.encode(person.getPassword()));
         return new ResponseEntity<>(personService.save(person), HttpStatus.CREATED);
